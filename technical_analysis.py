@@ -46,8 +46,13 @@ def get_latest_signals(df: pd.DataFrame) -> dict:
     if len(df) < 2:
         return {"error": "Insufficient data for analysis"}
 
-    latest = df.iloc[-1]
-    prev = df.iloc[-2]
+    # Drop rows where Close is NaN (can happen with yfinance)
+    df_clean = df.dropna(subset=["Close"])
+    if len(df_clean) < 2:
+        return {"error": "Insufficient data for analysis"}
+
+    latest = df_clean.iloc[-1]
+    prev = df_clean.iloc[-2]
 
     close = latest["Close"]
     sma_short = latest.get(f"SMA_{SHORT_MA}")

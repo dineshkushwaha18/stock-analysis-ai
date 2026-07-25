@@ -152,7 +152,9 @@ if st.session_state.analysis_result:
     with col1:
         st.metric("Stock", f"{stock_info['name']}")
     with col2:
-        st.metric("Price", f"${signals.get('price', 'N/A')}")
+        price = signals.get('price', 'N/A')
+        price_display = f"${price}" if price and price != 'N/A' and str(price) != 'nan' else "N/A"
+        st.metric("Price", price_display)
     with col3:
         st.metric("Overall Signal", overall_label)
     with col4:
