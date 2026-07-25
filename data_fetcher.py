@@ -4,15 +4,9 @@ Data fetching module — retrieves stock price data and news headlines.
 
 import yfinance as yf
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import feedparser
 from config import DEFAULT_PERIOD, DEFAULT_INTERVAL, MAX_NEWS_HEADLINES
-
-# Disable yfinance price cache so cloud deployments always get fresh data
-try:
-    yf.set_tz_cache_location("/tmp/yf_tz_cache")
-except Exception:
-    pass
 
 # Map period strings to approximate days for explicit date range
 _PERIOD_DAYS = {
@@ -23,26 +17,34 @@ _PERIOD_DAYS = {
 def get_stock_data(ticker: str, period: str = DEFAULT_PERIOD, interval: str = DEFAULT_INTERVAL) -> pd.DataFrame:
     """
     Fetch historical stock data from Yahoo Finance.
-    Uses explicit start/end dates to avoid timezone-dependent period issues
-    on cloud servers.
+
+    Uses yf.download() with explicit UTC dates instead of Ticker.history()
+    to avoid stale cached data on Streamlit Cloud servers.
 
     Returns a DataFrame with OHLCV data, or empty DataFrame on failure.
     """
     try:
-        # Use explicit dates so server timezone doesn't affect results
-        end = datetime.utcnow() + timedelta(days=1)  # tomorrow UTC to ensure today included
+        # Use explicit UTC dates so server timezone doesn't affect results
+        end = datetime.now(timezone.utc) + timedelta(days=1)
         days = _PERIOD_DAYS.get(period, 365)
         start = end - timedelta(days=days)
-        # Create fresh Ticker each time to avoid stale session data
-        stock = yf.Ticker(ticker)
-        stock._price_history = None  # Clear any cached price data
-        df = stock.history(
+
+        # yf.download() bypasses Ticker's internal price cache
+        df = yf.download(
+            ticker,
             start=start.strftime("%Y-%m-%d"),
             end=end.strftime("%Y-%m-%d"),
             interval=interval,
+            progress=False,
         )
         if df.empty:
             return pd.DataFrame()
+
+        # yf.download() returns MultiIndex columns for single tickers
+        # e.g. ('Close', 'AAPL') — flatten to just 'Close'
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.get_level_values(0)
+
         return df
     except Exception as e:
         print(f"Error fetching data for {ticker}: {e}")
