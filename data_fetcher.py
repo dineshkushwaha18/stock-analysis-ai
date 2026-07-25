@@ -8,6 +8,12 @@ from datetime import datetime, timedelta
 import feedparser
 from config import DEFAULT_PERIOD, DEFAULT_INTERVAL, MAX_NEWS_HEADLINES
 
+# Disable yfinance price cache so cloud deployments always get fresh data
+try:
+    yf.set_tz_cache_location("/tmp/yf_tz_cache")
+except Exception:
+    pass
+
 # Map period strings to approximate days for explicit date range
 _PERIOD_DAYS = {
     "1mo": 30, "3mo": 90, "6mo": 180, "1y": 365, "2y": 730, "5y": 1825,
@@ -23,12 +29,18 @@ def get_stock_data(ticker: str, period: str = DEFAULT_PERIOD, interval: str = DE
     Returns a DataFrame with OHLCV data, or empty DataFrame on failure.
     """
     try:
-        stock = yf.Ticker(ticker)
         # Use explicit dates so server timezone doesn't affect results
         end = datetime.utcnow() + timedelta(days=1)  # tomorrow UTC to ensure today included
         days = _PERIOD_DAYS.get(period, 365)
         start = end - timedelta(days=days)
-        df = stock.history(start=start.strftime("%Y-%m-%d"), end=end.strftime("%Y-%m-%d"), interval=interval)
+        # Create fresh Ticker each time to avoid stale session data
+        stock = yf.Ticker(ticker)
+        stock._price_history = None  # Clear any cached price data
+        df = stock.history(
+            start=start.strftime("%Y-%m-%d"),
+            end=end.strftime("%Y-%m-%d"),
+            interval=interval,
+        )
         if df.empty:
             return pd.DataFrame()
         return df
