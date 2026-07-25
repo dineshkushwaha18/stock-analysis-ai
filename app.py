@@ -150,13 +150,21 @@ if st.session_state.analysis_result:
 
     overall_label, overall_score = compute_overall_signal(signals, sentiment, ml_result)
 
-    # Get price and date directly from DataFrame (more reliable than signals dict)
+    # Get price: prefer fast_info (real-time, works on cloud) over historical data
+    _realtime_price = stock_info.get('last_price')
+    if _realtime_price and not pd.isna(_realtime_price):
+        _display_price = round(_realtime_price, 2)
+        _price_source = "real-time"
+    else:
+        _last_valid_idx = df["Close"].last_valid_index()
+        _display_price = round(df.loc[_last_valid_idx, "Close"], 2) if _last_valid_idx is not None else "N/A"
+        _price_source = "historical"
+
+    # Get the last valid trading date from historical data
     _last_valid_idx = df["Close"].last_valid_index()
     if _last_valid_idx is not None:
-        _direct_price = round(df.loc[_last_valid_idx, "Close"], 2)
         _direct_date = _last_valid_idx.strftime('%Y-%m-%d') if hasattr(_last_valid_idx, 'strftime') else str(_last_valid_idx)
     else:
-        _direct_price = signals.get('price', 'N/A')
         _direct_date = signals.get('data_date', '')
 
     # Header info
@@ -164,7 +172,7 @@ if st.session_state.analysis_result:
     with col1:
         st.metric("Stock", f"{stock_info['name']}")
     with col2:
-        price_display = f"${_direct_price}" if _direct_price and str(_direct_price) != 'nan' else "N/A"
+        price_display = f"${_display_price}" if _display_price and str(_display_price) != 'nan' else "N/A"
         st.metric("Price", price_display)
     with col3:
         st.metric("Overall Signal", overall_label)
@@ -172,7 +180,7 @@ if st.session_state.analysis_result:
         rsi = signals.get("rsi")
         rsi_display = f"{rsi}" if rsi else "N/A"
         st.metric("RSI", rsi_display)
-    st.caption(f"📅 Price as of {_direct_date} · Based on last 1 year of trading data ({len(df)} trading days)")
+    st.caption(f"📅 Latest price ({_price_source}) · Historical data through {_direct_date} ({len(df)} trading days)")
 
     # Debug: show data diagnostics (remove after confirming fix)
     with st.expander("🔍 Debug: Data diagnostics"):
