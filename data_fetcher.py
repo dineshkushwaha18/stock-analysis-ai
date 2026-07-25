@@ -4,9 +4,17 @@ Data fetching module — retrieves stock price data and news headlines.
 
 import yfinance as yf
 import pandas as pd
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, date
 import feedparser
 from config import DEFAULT_PERIOD, DEFAULT_INTERVAL, MAX_NEWS_HEADLINES
+
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:
+    from backports.zoneinfo import ZoneInfo
+
+# US market timezone — NYSE/NASDAQ operate in Eastern Time
+_MARKET_TZ = ZoneInfo("America/New_York")
 
 # Map period strings to approximate days for explicit date range
 _PERIOD_DAYS = {
@@ -18,22 +26,24 @@ def get_stock_data(ticker: str, period: str = DEFAULT_PERIOD, interval: str = DE
     """
     Fetch historical stock data from Yahoo Finance.
 
-    Uses yf.download() with explicit UTC dates instead of Ticker.history()
-    to avoid stale cached data on Streamlit Cloud servers.
+    Uses yf.download() with market-timezone-aware dates to ensure
+    the latest trading day's data is always included, regardless of
+    what timezone the server runs in.
 
     Returns a DataFrame with OHLCV data, or empty DataFrame on failure.
     """
     try:
-        # Use explicit UTC dates so server timezone doesn't affect results
-        end = datetime.now(timezone.utc) + timedelta(days=1)
+        # Use the US market timezone to determine "today"
+        market_now = datetime.now(_MARKET_TZ)
+        end_date = market_now.date() + timedelta(days=1)  # tomorrow in market tz
         days = _PERIOD_DAYS.get(period, 365)
-        start = end - timedelta(days=days)
+        start_date = end_date - timedelta(days=days)
 
         # yf.download() bypasses Ticker's internal price cache
         df = yf.download(
             ticker,
-            start=start.strftime("%Y-%m-%d"),
-            end=end.strftime("%Y-%m-%d"),
+            start=start_date,
+            end=end_date,
             interval=interval,
             progress=False,
         )

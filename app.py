@@ -299,3 +299,12 @@ else:
     ### Example tickers to try:
     `AAPL` · `TSLA` · `MSFT` · `NVDA` · `GOOGL` · `AMZN` · `META`
     """)
+
+# Debug footer — shows server time to verify deployment
+from datetime import datetime
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:
+    from backports.zoneinfo import ZoneInfo
+_et = datetime.now(ZoneInfo("America/New_York"))
+st.caption(f"🕐 Server time (ET): {_et.strftime('%Y-%m-%d %H:%M:%S')} · App version: 2026-07-25a")
