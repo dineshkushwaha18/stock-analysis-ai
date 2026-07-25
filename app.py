@@ -182,33 +182,6 @@ if st.session_state.analysis_result:
         st.metric("RSI", rsi_display)
     st.caption(f"📅 Latest price ({_price_source}) · Historical data through {_direct_date} ({len(df)} trading days)")
 
-    # Debug: show data diagnostics (remove after confirming fix)
-    with st.expander("🔍 Debug: Data diagnostics"):
-        last_dates = [str(d.date()) if hasattr(d, 'date') else str(d) for d in df.index[-5:]]
-        from datetime import datetime as _dt
-        try:
-            from zoneinfo import ZoneInfo as _ZI
-        except ImportError:
-            from backports.zoneinfo import ZoneInfo as _ZI
-        _et_now = _dt.now(_ZI("America/New_York"))
-        # Check what dropna does
-        _df_clean = df.dropna(subset=["Close"])
-        _clean_last5 = [str(d.date()) if hasattr(d, 'date') else str(d) for d in _df_clean.index[-5:]]
-        _last_row = df.iloc[-1]
-        _last_close = _last_row["Close"]
-        import numpy as _np
-        st.code(
-            f"Server ET time: {_et_now.strftime('%Y-%m-%d %H:%M:%S')}\n"
-            f"Raw df last 5 dates: {last_dates}\n"
-            f"After dropna(Close) last 5: {_clean_last5}\n"
-            f"df.iloc[-1] index: {df.index[-1]}\n"
-            f"df.iloc[-1]['Close']: {_last_close} (isnan: {_np.isnan(_last_close) if isinstance(_last_close, float) else 'not float'})\n"
-            f"df.iloc[-2]['Close']: {df.iloc[-2]['Close']}\n"
-            f"signals returned: price={signals.get('price')}, date={signals.get('data_date')}\n"
-            f"Total rows: {len(df)}, After dropna: {len(_df_clean)}\n"
-            f"yfinance version: {__import__('yfinance').__version__}"
-        )
-
     # Chart
     st.plotly_chart(create_stock_chart(df, ticker), use_container_width=True)
 
@@ -342,11 +315,3 @@ else:
     `AAPL` · `TSLA` · `MSFT` · `NVDA` · `GOOGL` · `AMZN` · `META`
     """)
 
-# Debug footer — shows server time to verify deployment
-from datetime import datetime
-try:
-    from zoneinfo import ZoneInfo
-except ImportError:
-    from backports.zoneinfo import ZoneInfo
-_et = datetime.now(ZoneInfo("America/New_York"))
-st.caption(f"🕐 Server time (ET): {_et.strftime('%Y-%m-%d %H:%M:%S')} · App version: 2026-07-25a")

@@ -6,7 +6,7 @@ Built as a solo project for **BMA5278 — AI and Analytics in Business Practice*
 
 ## Live Demo
 
-🔗 [https://stock-analysis-ai.streamlit.app](https://stock-analysis-ai.streamlit.app)
+🔗 [https://stock-ai-analysis.streamlit.app](https://stock-ai-analysis.streamlit.app)
 
 ## Features
 
@@ -14,17 +14,19 @@ Built as a solo project for **BMA5278 — AI and Analytics in Business Practice*
 - **Technical Indicators** — SMA (20/50), RSI, MACD, Bollinger Bands with plain-English interpretations
 - **News Sentiment** — Real-time headline scraping scored by AI on a -1 to +1 scale
 - **ML Prediction** — GradientBoosting classifier predicting UP/DOWN direction with confidence scores and AUC-ROC evaluation
-- **Interactive Charts** — Candlestick + RSI + MACD panels via Plotly
+- **Interactive Charts** — 3-panel candlestick + RSI + MACD via Plotly
 - **Combined Overall Signal** — Weighted aggregation of technicals, sentiment, and ML into a single bullish/bearish indicator
 - **Explainable Predictions** — Feature importance and human-readable reasons for each prediction
+- **Follow-up Chat** — Ask the AI follow-up questions about the analysis
+- **Cloud-Ready** — Handles Yahoo Finance data quirks on cloud servers via real-time price fallback
 
 ## Tech Stack
 
 | Component | Technology |
 |-----------|-----------|
-| Frontend | Streamlit |
+| Frontend | Streamlit (deployed on Streamlit Community Cloud) |
 | LLM | Groq (Llama 3.3 70B) via OpenAI-compatible API |
-| Stock Data | yfinance |
+| Stock Data | yfinance (with `fast_info` real-time fallback) |
 | Technical Analysis | `ta` library |
 | ML Model | scikit-learn (GradientBoostingClassifier) |
 | Charts | Plotly |
@@ -35,10 +37,10 @@ Built as a solo project for **BMA5278 — AI and Analytics in Business Practice*
 ```
 ├── app.py                  # Main Streamlit application
 ├── config.py               # Configuration and secrets management
-├── data_fetcher.py         # Stock price & news data retrieval
+├── data_fetcher.py         # Stock price & news data retrieval (with cloud fixes)
 ├── technical_analysis.py   # Technical indicator computation
 ├── sentiment.py            # LLM-based news sentiment scoring
-├── llm_engine.py           # AI analysis generation & chat
+├── llm_engine.py           # AI analysis generation & follow-up chat
 ├── ml_predictor.py         # ML prediction with explainability
 ├── charts.py               # Interactive Plotly charts
 ├── requirements.txt        # Python dependencies
@@ -70,6 +72,15 @@ Built as a solo project for **BMA5278 — AI and Analytics in Business Practice*
    streamlit run app.py
    ```
 
+## Deploy to Streamlit Cloud
+
+1. Push this repo to GitHub (public)
+2. Go to [share.streamlit.io](https://share.streamlit.io) and sign in with GitHub
+3. Click **New app** → select your repo → set main file to `app.py`
+4. In **Advanced settings**, add your secret: `GROQ_API_KEY = "your-key-here"`
+5. Set Python version to **3.12**
+6. Click **Deploy** — you'll get a shareable URL
+
 ## How It Works
 
 1. Enter a stock ticker (e.g., AAPL, TSLA, MU)
@@ -79,10 +90,11 @@ Built as a solo project for **BMA5278 — AI and Analytics in Business Practice*
 5. A GradientBoosting model is trained on historical features to predict direction
 6. All signals are combined into an overall assessment
 7. The LLM generates a comprehensive analysis explaining its outlook
+8. Ask follow-up questions via the built-in chat
 
 ## API Key
 
-This app uses [Groq](https://console.groq.com) for LLM inference (free tier). Sign up and get your API key, then add it to `.env` or Streamlit Cloud secrets.
+This app uses [Groq](https://console.groq.com) for LLM inference (free tier). Sign up and get your API key, then add it to `.env` locally or Streamlit Cloud secrets for deployment.
 
 ## License
 
