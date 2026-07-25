@@ -61,8 +61,16 @@ def get_latest_signals(df: pd.DataFrame) -> dict:
     macd_val = latest.get("MACD_12_26_9")
     macd_signal = latest.get("MACDs_12_26_9")
 
+    # Get the date of the latest data point
+    latest_date = latest.name
+    if hasattr(latest_date, 'strftime'):
+        data_date = latest_date.strftime('%Y-%m-%d')
+    else:
+        data_date = str(latest_date)
+
     signals = {
         "price": round(close, 2),
+        "data_date": data_date,
         "sma_short": round(sma_short, 2) if pd.notna(sma_short) else None,
         "sma_long": round(sma_long, 2) if pd.notna(sma_long) else None,
         "rsi": round(rsi, 2) if pd.notna(rsi) else None,

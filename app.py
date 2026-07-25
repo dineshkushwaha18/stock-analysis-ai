@@ -161,7 +161,8 @@ if st.session_state.analysis_result:
         rsi = signals.get("rsi")
         rsi_display = f"{rsi}" if rsi else "N/A"
         st.metric("RSI", rsi_display)
-    st.caption(f"📅 Based on last 1 year of trading data ({len(df)} trading days)")
+    data_date = signals.get('data_date', '')
+    st.caption(f"📅 Price as of {data_date} · Based on last 1 year of trading data ({len(df)} trading days)")
 
     # Chart
     st.plotly_chart(create_stock_chart(df, ticker), use_container_width=True)
