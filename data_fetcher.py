@@ -26,10 +26,7 @@ def get_stock_data(ticker: str, period: str = DEFAULT_PERIOD, interval: str = DE
     """
     Fetch historical stock data from Yahoo Finance.
 
-    Uses yf.download() with market-timezone-aware dates to ensure
-    the latest trading day's data is always included, regardless of
-    what timezone the server runs in.
-
+    Uses yf.download() with market-timezone-aware dates.
     Returns a DataFrame with OHLCV data, or empty DataFrame on failure.
     """
     try:
@@ -39,7 +36,6 @@ def get_stock_data(ticker: str, period: str = DEFAULT_PERIOD, interval: str = DE
         days = _PERIOD_DAYS.get(period, 365)
         start_date = end_date - timedelta(days=days)
 
-        # yf.download() bypasses Ticker's internal price cache
         df = yf.download(
             ticker,
             start=start_date,

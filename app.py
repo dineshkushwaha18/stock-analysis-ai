@@ -167,6 +167,23 @@ if st.session_state.analysis_result:
     data_date = signals.get('data_date', '')
     st.caption(f"📅 Price as of {data_date} · Based on last 1 year of trading data ({len(df)} trading days)")
 
+    # Debug: show data diagnostics (remove after confirming fix)
+    with st.expander("🔍 Debug: Data diagnostics"):
+        last_dates = [str(d.date()) if hasattr(d, 'date') else str(d) for d in df.index[-5:]]
+        from datetime import datetime as _dt
+        try:
+            from zoneinfo import ZoneInfo as _ZI
+        except ImportError:
+            from backports.zoneinfo import ZoneInfo as _ZI
+        _et_now = _dt.now(_ZI("America/New_York"))
+        st.code(
+            f"Server ET time: {_et_now.strftime('%Y-%m-%d %H:%M:%S')}\n"
+            f"Last 5 dates in data: {last_dates}\n"
+            f"Total rows: {len(df)}\n"
+            f"Columns: {list(df.columns[:6])}\n"
+            f"yfinance version: {__import__('yfinance').__version__}"
+        )
+
     # Chart
     st.plotly_chart(create_stock_chart(df, ticker), use_container_width=True)
 
