@@ -150,13 +150,21 @@ if st.session_state.analysis_result:
 
     overall_label, overall_score = compute_overall_signal(signals, sentiment, ml_result)
 
+    # Get price and date directly from DataFrame (more reliable than signals dict)
+    _last_valid_idx = df["Close"].last_valid_index()
+    if _last_valid_idx is not None:
+        _direct_price = round(df.loc[_last_valid_idx, "Close"], 2)
+        _direct_date = _last_valid_idx.strftime('%Y-%m-%d') if hasattr(_last_valid_idx, 'strftime') else str(_last_valid_idx)
+    else:
+        _direct_price = signals.get('price', 'N/A')
+        _direct_date = signals.get('data_date', '')
+
     # Header info
     col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.metric("Stock", f"{stock_info['name']}")
     with col2:
-        price = signals.get('price', 'N/A')
-        price_display = f"${price}" if price and price != 'N/A' and str(price) != 'nan' else "N/A"
+        price_display = f"${_direct_price}" if _direct_price and str(_direct_price) != 'nan' else "N/A"
         st.metric("Price", price_display)
     with col3:
         st.metric("Overall Signal", overall_label)
@@ -164,8 +172,7 @@ if st.session_state.analysis_result:
         rsi = signals.get("rsi")
         rsi_display = f"{rsi}" if rsi else "N/A"
         st.metric("RSI", rsi_display)
-    data_date = signals.get('data_date', '')
-    st.caption(f"📅 Price as of {data_date} · Based on last 1 year of trading data ({len(df)} trading days)")
+    st.caption(f"📅 Price as of {_direct_date} · Based on last 1 year of trading data ({len(df)} trading days)")
 
     # Debug: show data diagnostics (remove after confirming fix)
     with st.expander("🔍 Debug: Data diagnostics"):
@@ -176,11 +183,21 @@ if st.session_state.analysis_result:
         except ImportError:
             from backports.zoneinfo import ZoneInfo as _ZI
         _et_now = _dt.now(_ZI("America/New_York"))
+        # Check what dropna does
+        _df_clean = df.dropna(subset=["Close"])
+        _clean_last5 = [str(d.date()) if hasattr(d, 'date') else str(d) for d in _df_clean.index[-5:]]
+        _last_row = df.iloc[-1]
+        _last_close = _last_row["Close"]
+        import numpy as _np
         st.code(
             f"Server ET time: {_et_now.strftime('%Y-%m-%d %H:%M:%S')}\n"
-            f"Last 5 dates in data: {last_dates}\n"
-            f"Total rows: {len(df)}\n"
-            f"Columns: {list(df.columns[:6])}\n"
+            f"Raw df last 5 dates: {last_dates}\n"
+            f"After dropna(Close) last 5: {_clean_last5}\n"
+            f"df.iloc[-1] index: {df.index[-1]}\n"
+            f"df.iloc[-1]['Close']: {_last_close} (isnan: {_np.isnan(_last_close) if isinstance(_last_close, float) else 'not float'})\n"
+            f"df.iloc[-2]['Close']: {df.iloc[-2]['Close']}\n"
+            f"signals returned: price={signals.get('price')}, date={signals.get('data_date')}\n"
+            f"Total rows: {len(df)}, After dropna: {len(_df_clean)}\n"
             f"yfinance version: {__import__('yfinance').__version__}"
         )
 
