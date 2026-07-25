@@ -79,8 +79,11 @@ if analyze_btn and ticker:
         # Step 3b: Train ML prediction model
         ml_result = train_and_evaluate(df, horizon=prediction_horizon)
 
-        # Step 4: Generate AI analysis
-        analysis = generate_analysis(ticker, stock_info, signals, sentiment)
+        # Step 4: Generate AI analysis (graceful on LLM failure)
+        try:
+            analysis = generate_analysis(ticker, stock_info, signals, sentiment)
+        except Exception as e:
+            analysis = f"⚠️ AI analysis unavailable: {e}"
 
         # Store results
         st.session_state.analysis_result = {
