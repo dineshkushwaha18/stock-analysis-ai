@@ -5,13 +5,11 @@ BMA5278 AI and Analytics in Business Practice
 
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 from data_fetcher import get_stock_data, get_stock_info, get_news_headlines
 from technical_analysis import compute_indicators, get_latest_signals
 from sentiment import analyze_sentiment
 from llm_engine import generate_analysis, chat_followup
 from charts import create_stock_chart
-from ml_predictor import train_and_evaluate
 
 # ─── Page Configuration ───────────────────────────────────────────────────────
 st.set_page_config(
@@ -27,9 +25,6 @@ st.caption("AI-powered technical & sentiment analysis with explainable insights"
 with st.sidebar:
     st.header("Settings")
     ticker = st.text_input("Enter Stock Ticker", value="AAPL", placeholder="e.g. AAPL, TSLA, MSFT").upper().strip()
-    prediction_horizon = st.selectbox("Prediction Horizon", [1, 5, 10], index=1,
-                                       format_func=lambda x: f"{x} day{'s' if x > 1 else ''}",
-                                       help="How many trading days ahead to predict")
     analyze_btn = st.button("🔍 Analyze", type="primary", use_container_width=True)
 
     st.divider()
@@ -76,9 +71,6 @@ if analyze_btn and ticker:
         headlines = get_news_headlines(ticker)
         sentiment = analyze_sentiment(headlines, ticker)
 
-        # Step 3b: Train ML prediction model
-        ml_result = train_and_evaluate(df, horizon=prediction_horizon)
-
         # Step 4: Generate AI analysis (graceful on LLM failure)
         try:
             analysis = generate_analysis(ticker, stock_info, signals, sentiment)
@@ -94,7 +86,6 @@ if analyze_btn and ticker:
             "sentiment": sentiment,
             "analysis": analysis,
             "headlines": headlines,
-            "ml_result": ml_result,
         }
 
 # ─── Display Results ──────────────────────────────────────────────────────────
@@ -107,10 +98,9 @@ if st.session_state.analysis_result:
     sentiment = result["sentiment"]
     analysis = result["analysis"]
     headlines = result["headlines"]
-    ml_result = result["ml_result"]
 
-    # Compute combined overall signal from technicals + sentiment + ML
-    def compute_overall_signal(signals, sentiment, ml_result):
+    # Compute combined overall signal from technicals + sentiment
+    def compute_overall_signal(signals, sentiment):
         score = 0
         count = 0
         # Technical signals (each worth 1 point)
@@ -127,15 +117,6 @@ if st.session_state.analysis_result:
             sent_score = sentiment.get('score', 0)
             score += sent_score * 2
             count += 2
-        # ML prediction
-        if ml_result and not ml_result.get('error'):
-            ml_pred = ml_result['latest_prediction']
-            ml_weight = (ml_pred['confidence'] / 100) * 2
-            if ml_pred['direction'] == 'UP':
-                score += ml_weight
-            else:
-                score -= ml_weight
-            count += 2
         avg = score / count if count > 0 else 0
         if avg > 0.2:
             return '🟢 BULLISH', avg
@@ -148,7 +129,7 @@ if st.session_state.analysis_result:
         else:
             return '🔴 BEARISH', avg
 
-    overall_label, overall_score = compute_overall_signal(signals, sentiment, ml_result)
+    overall_label, overall_score = compute_overall_signal(signals, sentiment)
 
     # Get price: prefer fast_info (real-time, works on cloud) over historical data
     _realtime_price = stock_info.get('last_price')
@@ -186,7 +167,7 @@ if st.session_state.analysis_result:
     st.plotly_chart(create_stock_chart(df, ticker), use_container_width=True)
 
     # Analysis tabs
-    tab1, tab2, tab3, tab4 = st.tabs(["🤖 AI Analysis", "📰 News & Sentiment", "📊 Technical Signals", "🧠 ML Prediction"])
+    tab1, tab2, tab3 = st.tabs(["🤖 AI Analysis", "📰 News & Sentiment", "📊 Technical Signals"])
 
     with tab1:
         st.markdown(analysis)
@@ -221,64 +202,6 @@ if st.session_state.analysis_result:
         for interp in signals.get("interpretations", []):
             st.markdown(f"- {interp}")
 
-    with tab4:
-        if ml_result.get("error"):
-            st.warning(ml_result["error"])
-        else:
-            # Prediction header
-            pred = ml_result["latest_prediction"]
-            direction_emoji = "🟢 UP" if pred["direction"] == "UP" else "🔴 DOWN"
-
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.metric(f"Predicted Direction ({ml_result['prediction_horizon']}-day)", direction_emoji)
-            with col2:
-                st.metric("Confidence", f"{pred['confidence']}%")
-            with col3:
-                st.metric("Model AUC-ROC", f"{ml_result['auc_roc']:.4f}")
-
-            st.divider()
-
-            # Model performance
-            col1, col2 = st.columns(2)
-            with col1:
-                st.subheader("Model Performance")
-                auc_label = '✅ Good' if ml_result['auc_roc'] > 0.55 else '⚠️ Weak signal'
-                st.markdown(f"""
-                - **AUC-ROC:** {ml_result['auc_roc']:.4f} {auc_label}
-                - **Accuracy:** {ml_result['accuracy']:.1%}
-                - **Training samples:** {ml_result['train_size']}
-                - **Test samples:** {ml_result['test_size']}
-                - **Prediction horizon:** {ml_result['prediction_horizon']} trading days
-                """)
-
-            with col2:
-                st.subheader("Top Feature Importance")
-                feat_df = pd.DataFrame({
-                    "Feature": list(ml_result["feature_importance"].keys()),
-                    "Importance": list(ml_result["feature_importance"].values()),
-                })
-                fig = px.bar(feat_df, x="Importance", y="Feature", orientation="h",
-                             template="plotly_dark")
-                fig.update_layout(height=300, yaxis=dict(autorange="reversed"))
-                st.plotly_chart(fig, use_container_width=True)
-
-            # Probability breakdown
-            st.subheader("Prediction Probabilities")
-            prob_col1, prob_col2 = st.columns(2)
-            with prob_col1:
-                st.progress(pred["up_probability"], text=f"📈 UP probability: {pred['up_probability']:.1%}")
-            with prob_col2:
-                st.progress(pred["down_probability"], text=f"📉 DOWN probability: {pred['down_probability']:.1%}")
-
-            # Prediction explanation
-            if pred.get("explanation"):
-                st.divider()
-                st.subheader(f"Why the model predicts {pred['direction']}")
-                st.markdown("The top factors driving this prediction (ranked by importance):")
-                for i, reason in enumerate(pred["explanation"], 1):
-                    st.markdown(f"{i}. {reason}")
-
     # ─── Chat Interface ───────────────────────────────────────────────────────
     st.divider()
     st.subheader("💬 Ask Follow-up Questions")
@@ -307,7 +230,6 @@ else:
     ### What this tool does:
     - **Technical Analysis**: Computes RSI, MACD, Moving Averages, Bollinger Bands
     - **Sentiment Analysis**: Scores recent news headlines for bullish/bearish sentiment
-    - **ML Prediction**: Trained classifier predicts stock direction with AUC-ROC evaluation
     - **AI Reasoning**: Combines all signals to explain why a stock may move up or down
     - **Interactive Chat**: Ask follow-up questions about the analysis
     
