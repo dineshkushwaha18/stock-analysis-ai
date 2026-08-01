@@ -1,6 +1,6 @@
 # 📈 Stock Analysis AI Assistant
 
-An AI-powered stock analysis tool that combines **technical indicators**, **news sentiment analysis**, and **machine learning predictions** to provide actionable insights on any publicly traded stock.
+An AI-powered stock analysis tool that combines **technical indicators** and **news sentiment analysis** to provide actionable insights on any publicly traded stock.
 
 Built as a solo project for **BMA5278 — AI and Analytics in Business Practice**.
 
@@ -13,10 +13,8 @@ Built as a solo project for **BMA5278 — AI and Analytics in Business Practice*
 - **AI-Powered Analysis** — LLM-generated market outlook combining all signals into a decisive recommendation
 - **Technical Indicators** — SMA (20/50), RSI, MACD, Bollinger Bands with plain-English interpretations
 - **News Sentiment** — Real-time headline scraping scored by AI on a -1 to +1 scale
-- **ML Prediction** — GradientBoosting classifier predicting UP/DOWN direction with confidence scores and AUC-ROC evaluation
 - **Interactive Charts** — 3-panel candlestick + RSI + MACD via Plotly
-- **Combined Overall Signal** — Weighted aggregation of technicals, sentiment, and ML into a single bullish/bearish indicator
-- **Explainable Predictions** — Feature importance and human-readable reasons for each prediction
+- **Combined Overall Signal** — Weighted aggregation of technicals and sentiment into a single bullish/bearish indicator
 - **Follow-up Chat** — Ask the AI follow-up questions about the analysis
 - **Cloud-Ready** — Handles Yahoo Finance data quirks on cloud servers via real-time price fallback
 
@@ -28,7 +26,6 @@ Built as a solo project for **BMA5278 — AI and Analytics in Business Practice*
 | LLM | Groq (Llama 3.3 70B) via OpenAI-compatible API |
 | Stock Data | yfinance (with `fast_info` real-time fallback) |
 | Technical Analysis | `ta` library |
-| ML Model | scikit-learn (GradientBoostingClassifier) |
 | Charts | Plotly |
 | News | Google News RSS via feedparser |
 
@@ -41,7 +38,6 @@ Built as a solo project for **BMA5278 — AI and Analytics in Business Practice*
 ├── technical_analysis.py   # Technical indicator computation
 ├── sentiment.py            # LLM-based news sentiment scoring
 ├── llm_engine.py           # AI analysis generation & follow-up chat
-├── ml_predictor.py         # ML prediction with explainability
 ├── charts.py               # Interactive Plotly charts
 ├── requirements.txt        # Python dependencies
 ├── .env.example            # Environment variable template
@@ -87,10 +83,9 @@ Built as a solo project for **BMA5278 — AI and Analytics in Business Practice*
 2. The app fetches 1 year of price data and latest news headlines
 3. Technical indicators are computed and interpreted
 4. News headlines are scored for sentiment by the LLM
-5. A GradientBoosting model is trained on historical features to predict direction
-6. All signals are combined into an overall assessment
-7. The LLM generates a comprehensive analysis explaining its outlook
-8. Ask follow-up questions via the built-in chat
+5. Technicals and sentiment are combined into an overall signal
+6. The LLM generates a comprehensive analysis explaining its outlook
+7. Ask follow-up questions via the built-in chat
 
 ## API Key
 
