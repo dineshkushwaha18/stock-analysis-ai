@@ -1,0 +1,11 @@
+ticker,technical_score,sentiment_score,combined_avg,combined_label,recent_direction,recent_pct,aligned
+AAPL,-2,-0.7,-0.567,🔴 BEARISH,sideways,+0.1%,False
+MSFT,-1,0.9,0.114,🟢 Slightly Bullish,uptrend,+19.0%,True
+NVDA,-3,0.7,-0.32,🔴 BEARISH,uptrend,+3.0%,False
+TSLA,-4,-0.4,-0.8,🔴 BEARISH,downtrend,-20.9%,True
+GOOGL,1,0.4,0.36,🟢 BULLISH,sideways,-1.1%,False
+AMZN,1,0.8,0.371,🟢 BULLISH,uptrend,+11.9%,True
+META,-2,-0.9,-0.633,🔴 BEARISH,downtrend,-4.5%,True
+JPM,2,0.4,0.467,🟢 BULLISH,uptrend,+5.7%,True
+XOM,4,-0.4,0.533,🟢 BULLISH,uptrend,+13.4%,True
+PFE,2,0.6,0.533,🟢 BULLISH,uptrend,+4.6%,True
