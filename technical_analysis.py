@@ -98,9 +98,13 @@ def get_latest_signals(df: pd.DataFrame) -> dict:
     # RSI
     if rsi:
         if rsi > 70:
-            interpretations.append(f"RSI is {rsi:.1f} — OVERBOUGHT (potential reversal down)")
+            interpretations.append(f"RSI is {rsi:.1f} — overbought, bearish reversal risk")
         elif rsi < 30:
-            interpretations.append(f"RSI is {rsi:.1f} — OVERSOLD (potential reversal up)")
+            interpretations.append(f"RSI is {rsi:.1f} — oversold, bullish reversal potential")
+        elif rsi > 55:
+            interpretations.append(f"RSI is {rsi:.1f} — bullish momentum")
+        elif rsi < 45:
+            interpretations.append(f"RSI is {rsi:.1f} — bearish momentum")
         else:
             interpretations.append(f"RSI is {rsi:.1f} — neutral range")
 
@@ -110,6 +114,15 @@ def get_latest_signals(df: pd.DataFrame) -> dict:
             interpretations.append("MACD is above signal line (bullish momentum)")
         else:
             interpretations.append("MACD is below signal line (bearish momentum)")
+
+    # Bollinger Bands
+    bbu = latest.get("BBU_20_2.0")
+    bbl = latest.get("BBL_20_2.0")
+    if pd.notna(bbu) and pd.notna(bbl):
+        if close > bbu:
+            interpretations.append(f"Price above upper Bollinger Band — bearish (overextended)")
+        elif close < bbl:
+            interpretations.append(f"Price below lower Bollinger Band — bullish (oversold bounce)")
 
     signals["interpretations"] = interpretations
     return signals
